@@ -12,5 +12,8 @@
 
 ### 轮子
 
-### 总结
+![lunzi](/Users/zysu/Documents/我的技术文章/GIF图/images/lunzi.jpg)
 
+![my_lunzi](/Users/zysu/Documents/我的技术文章/GIF图/images/my_lunzi.gif)
+
+### 总结
