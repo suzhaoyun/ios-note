@@ -108,7 +108,7 @@ FileSize即为GIF的大小，还有一个参数LoopCount也是非常重要的，
 
 所以这个时候呢，建议大家先不要直接动手，可以先去看看市面上有没有成熟的库可用，没有或者三方库不符合自己项目需求的时候再去自己开发，成熟的库经历了很多版本很多用户的检验，相对会更稳定。
 
-SDWebImage这个框架对于iOS开发者来说可以说是家喻户晓，SD在早期的版本里也是自己来处理GIF的，但是在4.0版本之后，SD需要依赖FLAnimatedImage来专门处理GIF。所以证明FLAnimatedImage（FL == Flipboard公司出品）应该还是不错的，下面呢简单的介绍一下FLAnimatedImage内部是如何实现的。
+SDWebImage这个框架对于iOS开发者来说可以说是家喻户晓，SD在早期的版本里也是自己来处理GIF的，但是在4.0版本之后，SD需要依赖FLAnimatedImage来专门处理GIF。所以证明FLAnimatedImage（FL == Flipboard公司）应该还是不错的，下面呢就来看一下FLAnimatedImage内部是如何实现的。
 
 #####FLAnimatedImage的渲染流程
 
@@ -120,7 +120,9 @@ SDWebImage这个框架对于iOS开发者来说可以说是家喻户晓，SD在�
 
 > FLAnimatedImage 会有两个线程同时在运转。 其中一个线程负责渲染 GIF 的每一帧的图片内容（所谓的渲染，大体上就是加载 GIF 文件数据，然后抽取出来当前需要哪一帧）。这个加载图片的过程是在异步线程进行的。 然后 FLAnimatedImage 会有一个内存区域专门放置这些渲染好的帧。 这时候，在主线程中的 ImageView 会根据当前需要，从这个内存区域中读取相应的帧。这是一个典型的 [生产者 - 消费者问题](https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem)问题。
 
-上面一段文字引用自FLAnimatedImage官方文档，FLAnimatedImageView（消费者）继承UIImageView，通过定时器CADisplayLink调用`setNeedsDisplay:` 触发 `displayLayer:`方法，显示要当前帧图片，定时器回调时如果加载不到当前帧图片，则等待定时器下次循环（因为帧图片是异步加载）。displayLink刷新帧率是所有图片delayTime的最大公约数（为了保证每一帧的播放时长准确）。
+上面一段文字引用自FLAnimatedImage官方文档，下面简述一下渲染流程和整体结构。
+
+1. FLAnimatedImageView（消费者）继承UIImageView，通过定时器CADisplayLink调用`setNeedsDisplay:` 触发 `displayLayer:`方法，展示当前帧图片，定时器回调时如果加载不到当前帧图片，则等待定时器下次循环（因为帧图片是异步加载）。displayLink刷新帧率是所有图片delayTime的最大公约数（为了保证每一帧的播放时长准确）。
 
 ```objective-c
 - (void)displayLayer:(CALayer *)layer
@@ -130,9 +132,9 @@ SDWebImage这个框架对于iOS开发者来说可以说是家喻户晓，SD在�
 }
 ```
 
-通过重写`setImage:`，`didMoveToSuperview:` ，`didMoveToWindow:`方法启动停止定时器实现自动播放、暂停；
+2. 通过重写`setImage:`，`didMoveToSuperview:` ，`didMoveToWindow:`方法启动停止定时器实现自动播放、暂停。
 
-每一帧图片都是由FLAnimatedImage对象（生产者）提供的，FLAnimatedImage内部也是使用了ImageIO的CGImageSourceCreateImageAtIndex这个api得到的，除此之外FLAnimatedImage还可以帮助我们提前解码帧图片（解码成位图）。
+3. 每一帧图片都是由FLAnimatedImage对象（生产者）提供的，FLAnimatedImage内部也是使用了ImageIO的CGImageSourceCreateImageAtIndex这个api得到的，除此之外FLAnimatedImage还可以帮助我们提前解码帧图片（解码成位图）。
 
 这里还有一个小的注意点告诉大家：
 
@@ -176,11 +178,11 @@ typedef NS_ENUM(NSUInteger, FLAnimatedImageFrameCacheSize) {
 
 FLAnimatedImage中有一个全局的allAnimatedImagesWeak = [NSHashTable weakObjectsHashTable]保存所有的FLAnimatedImage对象，收到内存警告通知时会遍历所有FLAnimatedImage，调用内部的`didReceiveMemoryWarning:` 方法。
 
-FLAnimatedImage收到内存警告后，首先会清空缓存，然后通过逐步**放开（增大）**缓存数量的方式控制内存曲线。如果我们仅仅是清空了缓存，而没有修改缓存策略，可能很短时间内，内存又会暴涨回原样，内存曲线会呈现出急速下降又急速上涨的情况。
+FLAnimatedImage收到内存警告后，首先会清空缓存，然后通过逐步**放开（增加）**缓存数量的方式控制内存曲线。如果我们仅仅是清空了缓存，而没有修改缓存策略，可能很短时间内内存又会暴涨成原样，而且整个内存曲线会呈现出急速下降又急速上涨的情况，看上去及其不稳定。
 
 ### 总结
 
-GIF的展示原理其实很简单吧，通过ImageIO可以获取到帧图片和帧图片的展示时间，然后使用定时器回调更新ImageView展示的图片就可以实现GIF展示，但是有大量的工作需要放在帧图片的预加载，缓存，内存控制上。FLAnimatedImage是一个非常成熟的GIF展示库，GitHub上的star7000+，如果没有特殊需求的话，可以使用它来展示GIF，当然使用YYKit的小伙伴，可以使用YYAnimatedImageView，有兴趣的同学可以去自行了解，这里就不做介绍了。
+GIF的展示原理其实很简单吧，通过ImageIO可以获取到帧图片和帧图片的展示时间，然后使用定时器回调更新ImageView展示的图片就可以实现GIF展示，但是有大量的工作需要放在帧图片的预加载，缓存，内存控制上。FLAnimatedImage是一个非常成熟的GIF展示库，GitHub上的star7000+，如果没有特殊需求的话，可以使用它来展示GIF，当然使用YYKit的小伙伴，可以使用YYAnimatedImageView，有兴趣的同学可以去自行了解，这里就不做介绍啦。
 
 参考资料：
 
