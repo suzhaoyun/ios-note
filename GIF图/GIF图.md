@@ -127,7 +127,11 @@ SDWebImage这个框架对于iOS开发者来说可以说是家喻户晓，SD在�
 上面一段文字引用自FLAnimatedImage官方文档，FLAnimatedImageView（消费者）继承UIImageView，通过定时器CADisplayLink调用`setNeedsDisplay:` 触发 `displayLayer:`方法，显示要当前帧图片，定时器回调时如果加载不到当前帧图片，则等待定时器下次循环（因为帧图片是异步加载）。displayLink刷新帧率是所有图片delayTime的最大公约数（为了保证每一帧的播放时长准确）。
 
 ```objective-c
-`- (``void``)displayLayer:(CALayer *)layer``{``    ``//修改layer的宿主来实现动图展示``    layer.contents =  (__bridge id)currentFrame.cgImage;``}`
+- (void)displayLayer:(CALayer *)layer
+{
+    //修改layer的宿主来实现动图展示
+    layer.contents =  (__bridge id)currentFrame.cgImage;
+}
 ```
 
 通过重写`setImage:`，`didMoveToSuperview:` ，`didMoveToWindow:`方法启动停止定时器实现自动播放、暂停；
