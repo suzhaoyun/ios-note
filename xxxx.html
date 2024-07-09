@@ -1,0 +1,27 @@
+<html>
+	<head>
+		<meta charset="UTF-8" />
+	</head>
+	<script type="text/javascript">
+		function clickx() {
+			console.log('clcik');
+			// 对于React Native
+// import { Linking } from 'react-native';
+ 
+// Linking.openURL('app-settings:').catch(err => console.error('An error occurred', err));
+ 
+// // 对于Electron
+// const { shell } = require('electron');
+ 
+// shell.openExternal('app-settings:');
+ 
+// 对于Cordova
+window.location = 'app-settings:';
+		}
+	</script>
+	<body>
+		我是内容
+		<button onclick="clickx()">点我</button>
+	</body>
+
+</html>
